@@ -383,6 +383,108 @@
     color:#fff;
   }
 
+  /* ---------- WISHES / UCAPAN ---------- */
+  .wishes{
+    max-width:400px;
+    margin:0 auto 8px;
+    text-align:left;
+  }
+  .wishes-label{
+    font-size:10.5px;
+    letter-spacing:2.2px;
+    color:var(--gold);
+    text-transform:uppercase;
+    font-weight:500;
+    margin-bottom:16px;
+    text-align:center;
+  }
+  .wishes-form{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-bottom:26px;
+  }
+  .wishes-form input,
+  .wishes-form textarea{
+    font-family:'Jost',sans-serif;
+    font-size:13.5px;
+    color:var(--navy-deep);
+    background:#fff;
+    border:1px solid rgba(10,42,82,0.25);
+    padding:11px 14px;
+    resize:none;
+    outline:none;
+    transition:border-color 0.25s ease;
+  }
+  .wishes-form input:focus,
+  .wishes-form textarea:focus{
+    border-color:var(--gold);
+  }
+  .wishes-btn{
+    align-self:flex-end;
+    background:var(--navy-deep);
+    color:#fff;
+    border:none;
+    font-family:'Jost',sans-serif;
+    font-size:12px;
+    letter-spacing:1.5px;
+    padding:11px 24px;
+    cursor:pointer;
+    transition:background 0.3s ease;
+  }
+  .wishes-btn:hover{background:var(--navy);}
+
+  .wishes-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    max-height:320px;
+    overflow-y:auto;
+    padding-right:4px;
+    margin-bottom:8px;
+  }
+  .wishes-list::-webkit-scrollbar{width:5px;}
+  .wishes-list::-webkit-scrollbar-thumb{background:var(--gold);border-radius:4px;}
+
+  .wish-item{
+    background:var(--navy-soft);
+    border-left:2px solid var(--gold);
+    padding:12px 16px;
+  }
+  .wish-name{
+    font-family:'Cormorant Garamond',serif;
+    font-weight:600;
+    font-size:15px;
+    color:var(--navy-deep);
+    margin-bottom:3px;
+  }
+  .wish-text{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    line-height:1.6;
+    word-wrap:break-word;
+  }
+  .wish-time{
+    font-size:10px;
+    color:rgba(74,90,117,0.65);
+    margin-top:6px;
+    letter-spacing:0.3px;
+  }
+  .wishes-empty{
+    text-align:center;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-style:italic;
+    padding:14px 0 4px;
+  }
+  .wishes-note{
+    text-align:center;
+    font-size:10px;
+    color:rgba(74,90,117,0.6);
+    margin-bottom:28px;
+    line-height:1.6;
+  }
+
   /* ---------- MUSIC TOGGLE ---------- */
   .music-toggle{
     position:fixed;
@@ -632,6 +734,24 @@
         Merupakan suatu kehormatan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir tepat waktu. Atas kehadiran serta perhatiannya, kami ucapkan terima kasih.<br><br>
         Wassalamu'alaikum Warahmatullahi Wabarakatuh.
       </p>
+
+      <div class="divider"><div class="line"></div><div class="dot"></div><div class="line"></div></div>
+
+      <div class="wishes">
+        <div class="wishes-label">Kirim Ucapan &amp; Doa</div>
+
+        <form class="wishes-form" id="wishesForm">
+          <input type="text" id="wishName" placeholder="Nama Anda" required maxlength="60">
+          <textarea id="wishMessage" placeholder="Tuliskan ucapan dan doa untuk Sayidah..." required maxlength="300" rows="3"></textarea>
+          <button type="submit" class="wishes-btn">Kirim Ucapan</button>
+        </form>
+
+        <div class="wishes-list" id="wishesList">
+          <div class="wishes-empty" id="wishesEmpty">Jadilah yang pertama mengirimkan ucapan &amp; doa.</div>
+        </div>
+        <div class="wishes-note">Ucapan tersimpan di perangkat masing-masing tamu.</div>
+      </div>
+
     </div>
 
     <div class="band-bottom">
@@ -711,6 +831,73 @@
 
     updateCountdown();
     setInterval(updateCountdown, 1000);
+
+    // ---------- UCAPAN & DOA ----------
+    var WISH_KEY = 'ucapan_sidang_sayidah_aulia';
+
+    function loadWishes(){
+      try{
+        return JSON.parse(localStorage.getItem(WISH_KEY)) || [];
+      }catch(e){
+        return [];
+      }
+    }
+
+    function saveWishes(list){
+      localStorage.setItem(WISH_KEY, JSON.stringify(list));
+    }
+
+    function escapeHtml(str){
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function renderWishes(){
+      var list = loadWishes();
+      var container = document.getElementById('wishesList');
+      var empty = document.getElementById('wishesEmpty');
+
+      if(list.length === 0){
+        container.innerHTML = '<div class="wishes-empty" id="wishesEmpty">Jadilah yang pertama mengirimkan ucapan &amp; doa.</div>';
+        return;
+      }
+
+      var html = '';
+      list.slice().reverse().forEach(function(w){
+        html += '<div class="wish-item">'
+          + '<div class="wish-name">' + escapeHtml(w.name) + '</div>'
+          + '<div class="wish-text">' + escapeHtml(w.message) + '</div>'
+          + '<div class="wish-time">' + w.time + '</div>'
+          + '</div>';
+      });
+      container.innerHTML = html;
+    }
+
+    var wishesForm = document.getElementById('wishesForm');
+    if(wishesForm){
+      wishesForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        var nameInput = document.getElementById('wishName');
+        var msgInput = document.getElementById('wishMessage');
+        var name = nameInput.value.trim();
+        var message = msgInput.value.trim();
+        if(!name || !message) return;
+
+        var now = new Date();
+        var timeStr = now.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}) + ', ' + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+
+        var list = loadWishes();
+        list.push({name:name, message:message, time:timeStr});
+        saveWishes(list);
+
+        nameInput.value = '';
+        msgInput.value = '';
+        renderWishes();
+      });
+    }
+
+    renderWishes();
   </script>
 
 </body>
